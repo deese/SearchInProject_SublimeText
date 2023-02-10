@@ -1,8 +1,12 @@
 # Changelog for SearchInProject
 
-## Upcoming
+## v1.9.0-alpha
 
-* Add new option `search_in_project_show_list_by_default` to skip the quick panel and go straight to the list view
+* Support for ST4 running on windows. 
+* Moved from split to regex parsing.
+* Replaced some Popen calls with python native. 
+* Backported the commonpath function from python 3.5 to replace commonprefix
+
 
 ## v1.8.0 2016-10-31
 

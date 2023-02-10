@@ -1,14 +1,18 @@
-# Project is discontinued!
+Just in case you found this project by accident you have to know that.. 
 
-I'm not using Sublime Text anymore and have no interest in supporting this project. 
+# This is just a small patch
 
-I added the MIT license to be explicit, so if you want to carry one, you have my full permission - and gratitude!
+I'm just taking some time that I don't have to make the tool working in ST4 and Windows. 
+Currently it works but it blocks the screen when searching in a huge folder. 
+
+IT HAS NOT BEEN TESTED THOROUGHLY. First tests work on Mac and Windows. 
+
 
 # Search In Project
 
-![Search in Project screencast](https://raw.githubusercontent.com/leonid-shevtsov/SearchInProject_SublimeText/screencast/screencast.gif)
+![Search in Project screencast](https://raw.githubusercontent.com/deese/SearchInProject_SublimeText/screencast/screencast.gif)
 
-This plugin for [Sublime Text 2 and 3](http://www.sublimetext.com/) lets you use your favorite search tool (`grep`, `ack`, `ag`, `pt`, `rg`, `git grep`, or `findstr`) to find strings aross your entire current Sublime Text project.
+This plugin for [Sublime Text 2, 3 and 4](http://www.sublimetext.com/) lets you use your favorite search tool (`grep`, `ack`, `ag`, `pt`, `rg`, `git grep`, or `findstr`) to find strings aross your entire current Sublime Text project.
 
 It opens a quick selection panel to browse results, and highlights matches inside files.
 
@@ -30,7 +34,7 @@ If you run Search In Project again, the program will remember the last search st
 
 [Package Control](http://sublime.wbond.net): install package **Search in Project** (this is the recommended method)
 
-Manual installation: download an [archive of the repository](https://github.com/leonid-shevtsov/SearchInProject_SublimeText/archive/master.zip), and unzip into the Sublime Text Packages folder.
+Manual installation: download an [archive of the repository](https://github.com/deese/SearchInProject_SublimeText/archive/master.zip), and unzip into the Sublime Text Packages folder.
 
 ### Installing search engines
 
@@ -63,3 +67,4 @@ You can always configure the full path to any search engine in the settings, as 
 ---
 
 Made by [Leonid Shevtsov](http://leonid.shevtsov.me)
+Path by DeeSe

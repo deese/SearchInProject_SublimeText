@@ -9,7 +9,7 @@ Please make sure you open the configuration file ( `Preferences - Search in Proj
 
 where <your_search_engine> is one of:
 
-  the_platinum_searcher, the_silver_searcher, ack, grep, git_grep, grep, or find_str
+  the_platinum_searcher, the_silver_searcher, ack, grep, git_grep, grep, ripgrep or find_str
 
 depending on your preference.
 
@@ -17,4 +17,4 @@ depending on your preference.
 
 You can find detailed instructions in the readme at
 
-https://github.com/leonid-shevtsov/SearchInProject_SublimeText#search-in-project
+https://github.com/deese/SearchInProject_SublimeText#search-in-project
