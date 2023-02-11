@@ -6,32 +6,11 @@ import sys
 import inspect
 from collections import defaultdict
 import traceback
-# Start of fixing import paths
-# realpath() with make your script run, even if you symlink it :)
-cmd_folder = os.path.realpath(os.path.abspath(
-    os.path.split(inspect.getfile(inspect.currentframe()))[0]))
-if cmd_folder not in sys.path:
-    sys.path.insert(0, cmd_folder)
-# use this if you want to include modules from a subforder
-cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(
-    os.path.split(inspect.getfile(inspect.currentframe()))[0], "subfolder")))
-if cmd_subfolder not in sys.path:
-    sys.path.insert(0, cmd_subfolder)
- # Info:
- # cmd_folder = os.path.dirname(os.path.abspath(__file__)) # DO NOT USE __file__ !!!
- # __file__ fails if script is called in different ways on Windows
- # __file__ fails if someone does os.chdir() before
- # sys.argv[0] also fails because it doesn't not always contains the path
-# End of fixing import paths
+import importlib
 
+sys.path.append(os.path.dirname(__file__))
 import searchengines
 
-basedir = os.getcwd()
-debug = True
-
-def vprint(d):
-    if debug:
-        print(d)
 
 class SearchInProjectCommand(sublime_plugin.WindowCommand):
 
@@ -45,6 +24,8 @@ class SearchInProjectCommand(sublime_plugin.WindowCommand):
         self.last_search_string = ''
         self.last_selected_result_index = 0
         self.saved_view = None
+        self.settings = sublime.load_settings(
+            'SearchInProject.sublime-settings')
 
     def run(self, type="search"):
         if type == "search":
@@ -59,15 +40,11 @@ class SearchInProjectCommand(sublime_plugin.WindowCommand):
             raise Exception("unrecognized type \"%s\"" % type)
 
     def load_search_engine(self):
-        self.settings = sublime.load_settings(
-            'SearchInProject.sublime-settings')
         self.engine_name = self.settings.get("search_in_project_engine")
-        pushd = os.getcwd()
-        os.chdir(basedir)
-        __import__("searchengines.%s" % self.engine_name)
+        importlib.import_module("searchengines.%s" % self.engine_name)
         self.engine = searchengines.__dict__[
             self.engine_name].engine_class(self.settings)
-        os.chdir(pushd)
+
 
     def search(self):
         self.load_search_engine()
@@ -90,21 +67,13 @@ class SearchInProjectCommand(sublime_plugin.WindowCommand):
 
         folders = self.search_folders()
 
-        # This doesn't work with python 3.3
-        # print(folders)
-        #self.common_path = os.path.commonpath(folders)
-
         self.common_path = self.engine.commonpath(folders)
+        
         try:
             self.results = self.engine.run(text, folders)
-            vprint("Results on search: {}".format(self.results))
+            self.dprint("Results on search: {}".format(self.results))
             if self.results:
-                # self.results = [[result[0].replace(self.common_path.replace(
-                #    os.sep, ''), ''), result[1][:self.MAX_RESULT_LINE_LENGTH]] for result in self.results]
-                #self.results = [(result[0].replace(self.common_path, '')[
-                #                 1:], result[1], result[2], result[3][:self.MAX_RESULT_LINE_LENGTH]) for result in self.results]
                 if self.settings.get('search_in_project_show_list_by_default') == 'true':
-                    vprint("LIST IN VIEW")
                     self.list_in_view()
                 else:
                     self.results.append("``` List results in view ```")
@@ -118,11 +87,12 @@ class SearchInProjectCommand(sublime_plugin.WindowCommand):
             else:
                 self.results = []
                 sublime.message_dialog('No results')
+
         except Exception as e:
             self.results = []
             sublime.error_message("%s running search engine %s:" % (
                 e.__class__.__name__, self.engine_name) + "\n" + str(e))
-            vprint(traceback.format_exc())
+            self.dprint(traceback.format_exc())
 
     def on_highlighted(self, file_no):
         self.last_selected_result_index = file_no
@@ -171,7 +141,7 @@ class SearchInProjectCommand(sublime_plugin.WindowCommand):
         self.results = []
 
     def list_in_view(self):
-        vprint("PRE POP: {}".format(self.results))
+        self.dprint("PRE POP: {}".format(self.results))
         #self.results.pop()
         view = sublime.active_window().new_file()
         print("In view: {}".format(self.results))
@@ -188,10 +158,11 @@ class SearchInProjectCommand(sublime_plugin.WindowCommand):
                 search_folders = [os.path.dirname(filename)]
             else:
                 search_folders = [os.path.expanduser("~")]
-
-        # check if windows
         return search_folders
-        # return [fd.replace("\\", "/") for fd in search_folders]
+    
+    def dprint(self, d):
+        if self.settings.get("debug", False):
+            print(d)
 
 
 class SearchInProjectResultsCommand(sublime_plugin.TextCommand):
@@ -203,13 +174,8 @@ class SearchInProjectResultsCommand(sublime_plugin.TextCommand):
     def format_results(self, common_path, results, query):
         grouped_by_filename = defaultdict(list)
 
-        vprint("Results: {}".format(results))
+        self.dprint("Results: {}".format(results))
         for result in results:
-            # ['\\search_in_project.py', '34:34:    # Used to trim lines for the results quick panel. Without trimming Sublime Text']
-            # Result: ['search_in_project.py', '34', '34', '    # Used to trim lines for the results quick panel. Without trimming Sublime Text']
-
-            #print("Common path: {}".format(common_path))
-            vprint("Result: {}".format(result))
             filename, location = result[0], result[1]
             text = result[2]
             grouped_by_filename[filename].append((location, text))
@@ -226,8 +192,8 @@ class SearchInProjectResultsCommand(sublime_plugin.TextCommand):
         self.view.set_scratch(True)
         self.view.set_syntax_file(
             'Packages/Default/Find Results.hidden-tmLanguage')
-        vprint("Run common_path: {}".format(common_path))
-        vprint("run results: {}".format(results))
+        #self.dprint("Run common_path: {}".format(common_path))
+        #self.dprint("run results: {}".format(results))
         results_text = self.format_results(common_path, results, query)
         self.view.insert(edit, self.view.text_point(0, 0), results_text)
         self.view.sel().clear()

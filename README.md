@@ -67,4 +67,5 @@ You can always configure the full path to any search engine in the settings, as 
 ---
 
 Made by [Leonid Shevtsov](http://leonid.shevtsov.me)
-Path by DeeSe
+
+v1.9.0 by DeeSe

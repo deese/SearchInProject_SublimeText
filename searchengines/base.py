@@ -1,15 +1,11 @@
+from inspect import trace
 import subprocess
 import re
 import shlex
 import sys
 import os
 import shutil
-
-debug = True
-
-def dprint(d):
-    if debug:
-        print(d)
+import traceback
 
 class Base:
     """
@@ -20,12 +16,8 @@ class Base:
     SETTINGS = [
         "path_to_executable",
         "mandatory_options",
-        "common_options"
+        "common_options", 
     ]
-
-    # HAS_COLUMN_INFO = re.compile('^\w:[^:]+:\d+:\d+:')
-    # HAS_COLUMN_INFO = re.compile('((?:\w\:\/|\/)[^:]+):(\d+):(\d+):(.*)')
-    # HAS_COLUMN_INFO = re.compile('((?:\w:\\|\/)[^:]+):(\d+):(\d+):(.*)')
     PARSER_RE = re.compile(r'^((?:\w\:[\\|/]|\/)[^:]+):([\d:]+):(.*)')
 
     def __init__(self, settings):
@@ -42,13 +34,11 @@ class Base:
 
         # With this you can add a full path as path_to_executable
         if not os.path.exists(self.path_to_executable) and os.name == "nt":
-            print("Resolving path")
             self._resolve_windows_path_to_executable()
 
-        #self.PARSER_RE = re.compile(self.get_regex())
-
-    def get_regex(self):
-        return r'^((?:\w\:[\\|/]|\/)[^:]+):(\d+):(\d+):(.*)'
+    def dprint(self, d):
+        if self.settings.get("debug", False): 
+            print(d)
 
     def _check_arg_types(self, funcname, *args):
         hasstr = hasbytes = False
@@ -92,10 +82,10 @@ class Base:
                                             type(path_repr).__name__))
                                             
     def commonpath (self, paths):
-        ## check python version version
-      
         """Given a sequence of path names, returns the longest common sub-path."""
-
+        if sys.version_info >= (3,5,0):
+            return os.path.commonpath(paths)
+       
         if not paths:
             raise ValueError('commonpath() arg is an empty sequence')
 
@@ -129,8 +119,6 @@ class Base:
         except (TypeError, AttributeError):
             self._check_arg_types('commonpath', *paths)
             raise
-        
-        ### This is for windows only
 
     def run(self, query, folders):
         """
@@ -139,8 +127,8 @@ class Base:
             by a semicolon, and the second element is the result string
         """
         arguments = self._arguments(query, self._remove_subfolders(folders))
-        print("Arguments: {}".format(arguments))
-        print("Running: %s" % " ".join(arguments))
+        self.vprint("Arguments: {}".format(arguments))
+        self.vprint("Running: %s" % " ".join(arguments))
 
         try:
             startupinfo = None
@@ -151,14 +139,12 @@ class Base:
             pipe = subprocess.Popen(arguments,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
-                                    cwd=self.commonpath(folders), ## This fails on windows
+                                    cwd=self.commonpath(folders), 
                                     startupinfo=startupinfo
                                     )
         except OSError as oe:  # Not FileNotFoundError for compatibility with Sublime Text 2
-            print("Found exception: {}".format(oe))
-            import traceback
-            traceback.print_exc()
-            print("Common path is: {}".format(self.commonpath(folders)))
+            self.vprint("Found exception: {}".format(oe))
+            self.vprint(traceback.format_exc())
             raise RuntimeError("Could not find executable %s" %
                                self.path_to_executable)
 
@@ -189,31 +175,17 @@ class Base:
             shlex.split(self.common_options) +
             [query] +
             folders )
-            #[ "\"{}\"".format(folder) for folder in folders] )
 
     def _sanitize_output(self, output):
         return output.decode('utf-8', 'ignore').strip()
 
     def _parse_output(self, output):
         lines = output.split("\n")
-
-        #print("Output Line: {}".format(lines))
-        # line_parts = [line.split(":", 3) if Base.HAS_COLUMN_INFO.match(
-        #    line) else line.split(":", 2) for line in lines``]
-
-        #print([(line, Base.HAS_COLUMN_INFO.match(line)) for line in lines])
-        dprint("Parse output lines: {}".format(lines))
-
+        self.dprint("Parse output lines: {}".format(lines))
 
         line_parts = [Base.PARSER_RE.findall(line)[0] for line in lines]
-        dprint("Line parts: {}".format(line_parts))
-        # line_parts = [Base.HAS_COLUMN_INFO.split(
-        #    line, 3)[1:-1] for line in lines]
+        self.dprint("Line parts: {}".format(line_parts))
 
-        #line_parts = self._filter_lines_without_matches(line_parts)
-
-        # print(list(line_parts))
-        #dprint(list(line_parts))
         return [line for line in line_parts]
 
     def _is_search_error(self, returncode, output, error):
@@ -227,12 +199,6 @@ class Base:
 
     def _resolve_windows_path_to_executable(self):
         try:
-            """for path in os.environ['PATH'].split(";"):
-                full_path = os.path.join(path, self.path_to_executable)
-                print(full_path)
-                if os.path.exists(full_path):
-                    print("Setting up the executable to {}".format(full_path))
-                    self.path_to_executable = full_path"""
             if shutil.which(self.path_to_executable):
                 self.path_to_executable = shutil.which(self.path_to_executable)
 
