@@ -7,6 +7,7 @@ import os
 import shutil
 import traceback
 
+
 class Base:
     """
         This is the base search engine class.
@@ -16,7 +17,7 @@ class Base:
     SETTINGS = [
         "path_to_executable",
         "mandatory_options",
-        "common_options", 
+        "common_options",
     ]
     PARSER_RE = re.compile(r'^((?:\w\:[\\|/]|\/)[^:]+):([\d:]+):(.*)')
 
@@ -37,7 +38,7 @@ class Base:
             self._resolve_windows_path_to_executable()
 
     def dprint(self, d):
-        if self.settings.get("debug", False): 
+        if self.settings.get("debug", False):
             print(d)
 
     def _check_arg_types(self, funcname, *args):
@@ -51,7 +52,8 @@ class Base:
                 raise TypeError('%s() argument must be str or bytes, not %r' %
                                 (funcname, s.__class__.__name__)) from None
         if hasstr and hasbytes:
-            raise TypeError("Can't mix strings and bytes in path components") from None
+            raise TypeError(
+                "Can't mix strings and bytes in path components") from None
 
     def _fspath(self, path):
         """Return the path representation of a path-like object.
@@ -80,12 +82,12 @@ class Base:
             raise TypeError("expected {}.__fspath__() to return str or bytes, "
                             "not {}".format(path_type.__name__,
                                             type(path_repr).__name__))
-                                            
-    def commonpath (self, paths):
+
+    def commonpath(self, paths):
         """Given a sequence of path names, returns the longest common sub-path."""
-        if sys.version_info >= (3,5,0):
+        if sys.version_info >= (3, 5, 0):
             return os.path.commonpath(paths)
-       
+
         if not paths:
             raise ValueError('commonpath() arg is an empty sequence')
 
@@ -103,9 +105,11 @@ class Base:
             try:
                 isabs, = set(p[:1] == sep for p in paths)
             except ValueError:
-                raise ValueError("Can't mix absolute and relative paths") from None
+                raise ValueError(
+                    "Can't mix absolute and relative paths") from None
 
-            split_paths = [[c for c in s if c and c != curdir] for s in split_paths]
+            split_paths = [[c for c in s if c and c != curdir]
+                           for s in split_paths]
             s1 = min(split_paths)
             s2 = max(split_paths)
             common = s1
@@ -127,8 +131,8 @@ class Base:
             by a semicolon, and the second element is the result string
         """
         arguments = self._arguments(query, self._remove_subfolders(folders))
-        self.vprint("Arguments: {}".format(arguments))
-        self.vprint("Running: %s" % " ".join(arguments))
+
+        self.dprint("Running: %s" % " ".join(arguments))
 
         try:
             startupinfo = None
@@ -139,12 +143,12 @@ class Base:
             pipe = subprocess.Popen(arguments,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
-                                    cwd=self.commonpath(folders), 
+                                    cwd=self.commonpath(folders),
                                     startupinfo=startupinfo
                                     )
         except OSError as oe:  # Not FileNotFoundError for compatibility with Sublime Text 2
-            self.vprint("Found exception: {}".format(oe))
-            self.vprint(traceback.format_exc())
+            self.dprint("Found exception: {}".format(oe))
+            self.dprint(traceback.format_exc())
             raise RuntimeError("Could not find executable %s" %
                                self.path_to_executable)
 
@@ -174,17 +178,15 @@ class Base:
             shlex.split(self.mandatory_options) +
             shlex.split(self.common_options) +
             [query] +
-            folders )
+            folders)
 
     def _sanitize_output(self, output):
         return output.decode('utf-8', 'ignore').strip()
 
     def _parse_output(self, output):
         lines = output.split("\n")
-        self.dprint("Parse output lines: {}".format(lines))
 
         line_parts = [Base.PARSER_RE.findall(line)[0] for line in lines]
-        self.dprint("Line parts: {}".format(line_parts))
 
         return [line for line in line_parts]
 

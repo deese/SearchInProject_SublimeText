@@ -45,7 +45,6 @@ class SearchInProjectCommand(sublime_plugin.WindowCommand):
         self.engine = searchengines.__dict__[
             self.engine_name].engine_class(self.settings)
 
-
     def search(self):
         self.load_search_engine()
         view = self.window.active_view()
@@ -68,10 +67,10 @@ class SearchInProjectCommand(sublime_plugin.WindowCommand):
         folders = self.search_folders()
 
         self.common_path = self.engine.commonpath(folders)
-        
+
         try:
             self.results = self.engine.run(text, folders)
-            self.dprint("Results on search: {}".format(self.results))
+            #self.dprint("Results on search: {}".format(self.results))
             if self.results:
                 if self.settings.get('search_in_project_show_list_by_default') == 'true':
                     self.list_in_view()
@@ -141,10 +140,8 @@ class SearchInProjectCommand(sublime_plugin.WindowCommand):
         self.results = []
 
     def list_in_view(self):
-        self.dprint("PRE POP: {}".format(self.results))
-        #self.results.pop()
+        # self.results.pop()
         view = sublime.active_window().new_file()
-        print("In view: {}".format(self.results))
         view.run_command('search_in_project_results',
                          {'query': self.last_search_string,
                           'results': self.results,
@@ -159,7 +156,7 @@ class SearchInProjectCommand(sublime_plugin.WindowCommand):
             else:
                 search_folders = [os.path.expanduser("~")]
         return search_folders
-    
+
     def dprint(self, d):
         if self.settings.get("debug", False):
             print(d)
@@ -174,7 +171,6 @@ class SearchInProjectResultsCommand(sublime_plugin.TextCommand):
     def format_results(self, common_path, results, query):
         grouped_by_filename = defaultdict(list)
 
-        self.dprint("Results: {}".format(results))
         for result in results:
             filename, location = result[0], result[1]
             text = result[2]
@@ -192,8 +188,6 @@ class SearchInProjectResultsCommand(sublime_plugin.TextCommand):
         self.view.set_scratch(True)
         self.view.set_syntax_file(
             'Packages/Default/Find Results.hidden-tmLanguage')
-        #self.dprint("Run common_path: {}".format(common_path))
-        #self.dprint("run results: {}".format(results))
         results_text = self.format_results(common_path, results, query)
         self.view.insert(edit, self.view.text_point(0, 0), results_text)
         self.view.sel().clear()
